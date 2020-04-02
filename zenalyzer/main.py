@@ -2,8 +2,6 @@ import argparse
 import collections
 from typing import Mapping
 
-from texttable import Texttable
-
 import zenalyzer.parser as parser
 from zenalyzer.sums import MultiCurrencySum
 from zenalyzer.tree import Tree
@@ -44,39 +42,5 @@ for txn in transactions:
             # print(txn)
             expenses[c].add(txn.incoming_sum.negate())
 
-# print(expenses)
-# print(cats)
-
 tree = Tree(expenses)
-# print(tree)
-
-table = Texttable()
-table.set_deco(Texttable.HEADER)
-table.set_cols_dtype(['t', 't', 'f'])
-
-table.header(['Category', 'Subcategory', 'Sum'])
-table.set_max_width(0)
-
-for tlc in sorted(tree.top_level_categories.values(), key=lambda tlc: tlc.name):
-    table.add_row([
-        tlc.name,
-        '',
-        str(tlc.cumulative),
-    ])
-
-    if tlc.own.nonzero():
-        table.add_row([
-            '',
-            '___',
-            str(tlc.own),
-        ])
-
-    for subcat in sorted(tlc.subcategories):
-        msc = tlc.subcategories[subcat]
-        table.add_row([
-            '',
-            subcat,
-            str(msc),
-        ])
-
-print(table.draw())
+print(tree.tableize().draw())

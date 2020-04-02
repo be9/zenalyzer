@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Mapping, DefaultDict, Dict
 
+from texttable import Texttable
+
 from zenalyzer.parser import Category
 from zenalyzer.sums import Sum, MultiCurrencySum
 
@@ -48,3 +50,35 @@ class Tree:
 
             for s in ms.items():
                 tlc.add(cat, s)
+
+    def tableize(self) -> Texttable:
+        table = Texttable()
+        table.set_deco(Texttable.HEADER)
+        table.set_cols_dtype(['t', 't', 'f'])
+
+        table.header(['Category', 'Subcategory', 'Sum'])
+        table.set_max_width(0)
+
+        for tlc in sorted(self.top_level_categories.values(), key=lambda tlc: tlc.name):
+            table.add_row([
+                tlc.name,
+                '',
+                str(tlc.cumulative),
+            ])
+
+            if tlc.own.nonzero():
+                table.add_row([
+                    '',
+                    '___',
+                    str(tlc.own),
+                ])
+
+            for subcat in sorted(tlc.subcategories):
+                msc = tlc.subcategories[subcat]
+                table.add_row([
+                    '',
+                    subcat,
+                    str(msc),
+                ])
+
+        return table

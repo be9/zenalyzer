@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Mapping, DefaultDict, Dict
+from typing import Mapping, DefaultDict, Dict, Set
 
 from texttable import Texttable
 
@@ -52,25 +52,22 @@ class Tree:
                 tlc.add(cat, s)
 
     def tableize(self) -> Texttable:
-        table = Texttable()
-        table.set_deco(Texttable.HEADER)
+        table = _new_table()
         table.set_cols_dtype(['t', 't', 'f'])
-
         table.header(['Category', 'Subcategory', 'Sum'])
-        table.set_max_width(0)
 
-        for tlc in sorted(self.top_level_categories.values(), key=lambda tlc: tlc.name):
+        for tlc in sorted(self.top_level_categories.values(), key=lambda _tlc: _tlc.name):
             table.add_row([
                 tlc.name,
                 '',
-                str(tlc.cumulative),
+                tlc.cumulative.format_multiline(),
             ])
 
             if tlc.own.nonzero():
                 table.add_row([
                     '',
                     '___',
-                    str(tlc.own),
+                    tlc.own.format_multiline(),
                 ])
 
             for subcat in sorted(tlc.subcategories):
@@ -78,7 +75,71 @@ class Tree:
                 table.add_row([
                     '',
                     subcat,
-                    str(msc),
+                    msc.format_multiline(),
                 ])
 
         return table
+
+
+def mega_table(trees_dict: Mapping[str, Tree]) -> Texttable:
+    table = _new_table()
+    table.set_cols_dtype(['t', 't'] + ['f'] * len(trees_dict))
+
+    labels = sorted(trees_dict)
+    table.header(['Category', 'Subcategory'] + labels)
+
+    all_top_level: Set[str] = set()
+
+    trees = [trees_dict[k] for k in labels]
+    for tree in trees:
+        for tlc in tree.top_level_categories.values():
+            all_top_level.add(tlc.name)
+
+    for top_level_name in sorted(all_top_level):
+        top_row = [top_level_name, '']
+        top_own_row = ['', '___']
+        all_subcats: Set[str] = set()
+
+        # 2 top-level rows
+        has_own = False
+        for tree in trees:
+            if top_level_name in tree.top_level_categories:
+                tlc = tree.top_level_categories[top_level_name]
+                top_row.append(tlc.cumulative.format_multiline())
+                top_own_row.append(tlc.own.format_multiline())
+                if tlc.own.nonzero():
+                    has_own = True
+
+                for subcat in tlc.subcategories.keys():
+                    all_subcats.add(subcat)
+            else:
+                top_row.append('')
+                top_own_row.append('')
+
+        table.add_row(top_row)
+        if has_own:
+            table.add_row(top_own_row)
+
+        # Subcategories
+        for subcat in sorted(all_subcats):
+            subcat_row = ['', subcat]
+
+            for tree in trees:
+                value = ''
+                if top_level_name in tree.top_level_categories:
+                    tlc = tree.top_level_categories[top_level_name]
+                    if subcat in tlc.subcategories:
+                        value = tlc.subcategories[subcat].format_multiline()
+
+                subcat_row.append(value)
+
+            table.add_row(subcat_row)
+
+    return table
+
+
+def _new_table() -> Texttable:
+    table = Texttable()
+    table.set_deco(Texttable.HEADER)
+    table.set_max_width(0)
+    return table

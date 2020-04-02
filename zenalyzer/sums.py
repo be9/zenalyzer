@@ -37,3 +37,7 @@ class MultiCurrencySum:
     def __str__(self) -> str:
         value = ", ".join(f"{value:.2f} {ccy}" for ccy, value in self._sums.items())
         return value if value != "" else "0"
+
+    def format_multiline(self) -> str:
+        value = " +\n".join(f"{value:.2f} {ccy}" for ccy, value in self._sums.items())
+        return value

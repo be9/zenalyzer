@@ -1,8 +1,8 @@
 import csv
 import datetime
-from dataclasses import dataclass
 import enum
 import typing
+from dataclasses import dataclass
 
 from zenalyzer.sums import Sum
 
@@ -33,7 +33,12 @@ class Transaction:
         if len(cats) < 1:
             return None
 
-        return tuple(cats[0].split(' / '))
+        cat = cats[0].split(' / ')
+        assert 1 <= len(cat) <= 2
+        if cat[0] == "":
+            cat[0] = "UNCATEGORIZED"
+
+        return tuple(cat)
 
     def type(self) -> TransactionType:
         if self.outgoing_account and self.outgoing_sum:

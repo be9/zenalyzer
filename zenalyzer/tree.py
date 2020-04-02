@@ -63,7 +63,7 @@ class Tree:
                 tlc.cumulative.format_multiline(),
             ])
 
-            if tlc.own.nonzero():
+            if tlc.own.nonzero() and len(tlc.subcategories) > 0:
                 table.add_row([
                     '',
                     '___',
@@ -102,6 +102,8 @@ def mega_table(trees_dict: Mapping[str, Tree]) -> Texttable:
 
         # 2 top-level rows
         has_own = False
+        has_subcats = False
+
         for tree in trees:
             if top_level_name in tree.top_level_categories:
                 tlc = tree.top_level_categories[top_level_name]
@@ -111,13 +113,14 @@ def mega_table(trees_dict: Mapping[str, Tree]) -> Texttable:
                     has_own = True
 
                 for subcat in tlc.subcategories.keys():
+                    has_subcats = True
                     all_subcats.add(subcat)
             else:
                 top_row.append('')
                 top_own_row.append('')
 
         table.add_row(top_row)
-        if has_own:
+        if has_own and has_subcats:
             table.add_row(top_own_row)
 
         # Subcategories

@@ -1,5 +1,6 @@
 import argparse
 import collections
+import datetime
 from typing import Mapping, Sequence, DefaultDict, List, Dict
 
 import zenalyzer.parser as parser
@@ -41,12 +42,21 @@ def main() -> None:
     argparser = argparse.ArgumentParser(description='Process ZenMoney exports')
     argparser.add_argument('files', metavar='FILE', type=str, nargs='+', help='Source file')
     argparser.add_argument("-m", "--monthly", help="show per-month stats", action="store_true")
+    argparser.add_argument("-s", "--start-date", help="start date (YYYY-MM-DD)",
+                           required=True, type=_valid_date)
+    argparser.add_argument("-e", "--end-date", help="end date (YYYY-MM-DD",
+                           required=True, type=_valid_date)
     args = argparser.parse_args()
 
     all_transactions = []
 
     for fn in args.files:
         for txn in parser.parse_csv(fn):
+            if args.start_date and txn.date < args.start_date:
+                continue
+            if args.end_date and txn.date > args.end_date:
+                continue
+
             all_transactions.append(txn)
 
     if args.monthly:
@@ -62,6 +72,14 @@ def main() -> None:
         print(mega_table(trees_by_month).draw())
     else:
         print(make_tree(all_transactions).tableize().draw())
+
+
+def _valid_date(s) -> datetime.date:
+    try:
+        return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+    except ValueError:
+        msg = "Not a valid date: '{0}'.".format(s)
+        raise argparse.ArgumentTypeError(msg)
 
 
 if __name__== "__main__":

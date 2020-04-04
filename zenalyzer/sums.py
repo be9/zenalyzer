@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import collections
+import locale
 from dataclasses import dataclass
-from typing import DefaultDict, Iterable
+from typing import DefaultDict, Iterable, Callable, Mapping
 
 
 @dataclass
@@ -41,3 +42,21 @@ class MultiCurrencySum:
     def format_multiline(self) -> str:
         value = " +\n".join(f"{value:.2f} {ccy}" for ccy, value in self._sums.items())
         return value
+
+
+MultiCurrencySumFormatter = Callable[[MultiCurrencySum], str]
+
+
+class ExchangingFormatter:
+    _main_currency: str
+    _rates: Mapping[str, float]
+
+    def __init__(self, rates: Mapping[str, float]):
+        self._rates = rates
+
+    def __call__(self, mcs: MultiCurrencySum) -> str:
+        value = 0.0
+        for s in mcs.items():
+            value += float(self._rates[s.currency]) * s.sum
+
+        return locale.currency(value, symbol=False, grouping=True)

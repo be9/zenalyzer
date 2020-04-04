@@ -4,7 +4,7 @@ from typing import Mapping, DefaultDict, Dict, Set
 from texttable import Texttable
 
 from zenalyzer.parser import Category
-from zenalyzer.sums import Sum, MultiCurrencySum
+from zenalyzer.sums import Sum, MultiCurrencySum, MultiCurrencySumFormatter
 
 PerCategorySums = Mapping[Category, MultiCurrencySum]
 
@@ -51,7 +51,7 @@ class Tree:
             for s in ms.items():
                 tlc.add(cat, s)
 
-    def tableize(self) -> Texttable:
+    def tableize(self, fmt: MultiCurrencySumFormatter) -> Texttable:
         table = _new_table()
         table.set_cols_dtype(['t', 't', 'f'])
         table.header(['Category', 'Subcategory', 'Sum'])
@@ -60,14 +60,14 @@ class Tree:
             table.add_row([
                 tlc.name,
                 '',
-                tlc.cumulative.format_multiline(),
+                fmt(tlc.cumulative),
             ])
 
             if tlc.own.nonzero() and len(tlc.subcategories) > 0:
                 table.add_row([
                     '',
                     '___',
-                    tlc.own.format_multiline(),
+                    fmt(tlc.own),
                 ])
 
             for subcat in sorted(tlc.subcategories):
@@ -75,15 +75,15 @@ class Tree:
                 table.add_row([
                     '',
                     subcat,
-                    msc.format_multiline(),
+                    fmt(msc),
                 ])
 
         return table
 
 
-def mega_table(trees_dict: Mapping[str, Tree]) -> Texttable:
+def mega_table(trees_dict: Mapping[str, Tree], fmt: MultiCurrencySumFormatter) -> Texttable:
     table = _new_table()
-    table.set_cols_dtype(['t', 't'] + ['f'] * len(trees_dict))
+    table.set_cols_dtype(['t', 't'] + ['t'] * len(trees_dict))
 
     labels = sorted(trees_dict)
     table.header(['Category', 'Subcategory'] + labels)
@@ -107,8 +107,8 @@ def mega_table(trees_dict: Mapping[str, Tree]) -> Texttable:
         for tree in trees:
             if top_level_name in tree.top_level_categories:
                 tlc = tree.top_level_categories[top_level_name]
-                top_row.append(tlc.cumulative.format_multiline())
-                top_own_row.append(tlc.own.format_multiline())
+                top_row.append(fmt(tlc.cumulative))
+                top_own_row.append(fmt(tlc.own))
                 if tlc.own.nonzero():
                     has_own = True
 
@@ -132,7 +132,7 @@ def mega_table(trees_dict: Mapping[str, Tree]) -> Texttable:
                 if top_level_name in tree.top_level_categories:
                     tlc = tree.top_level_categories[top_level_name]
                     if subcat in tlc.subcategories:
-                        value = tlc.subcategories[subcat].format_multiline()
+                        value = fmt(tlc.subcategories[subcat])
 
                 subcat_row.append(value)
 

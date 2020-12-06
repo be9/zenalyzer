@@ -44,19 +44,22 @@ class MultiCurrencySum:
         return value
 
 
-MultiCurrencySumFormatter = Callable[[MultiCurrencySum], str]
+MultiCurrencySumEvaluator = Callable[[MultiCurrencySum], float]
 
 
-class ExchangingFormatter:
+class ExchangingEvaluator:
     _main_currency: str
     _rates: Mapping[str, float]
 
     def __init__(self, rates: Mapping[str, float]):
         self._rates = rates
 
-    def __call__(self, mcs: MultiCurrencySum) -> str:
+    def __call__(self, mcs: MultiCurrencySum) -> float:
         value = 0.0
         for s in mcs.items():
             value += float(self._rates[s.currency]) * s.sum
+        return value
 
-        return locale.currency(value, symbol=False, grouping=True)
+
+def format_currency(value: float) -> str:
+    return locale.currency(value, symbol=False, grouping=True)
